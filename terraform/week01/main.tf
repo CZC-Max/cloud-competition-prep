@@ -92,8 +92,7 @@ resource "alicloud_instance" "ecs" {
   vswitch_id      = alicloud_vswitch.vswhangzhou.id # 可用区由交换机决定，实例无需再写 zone_id
   password        = var.ecs_password
 
-  allocate_public_ip         = true # 分配公网 IP
-  internet_max_bandwidth_out = 10
+  internet_max_bandwidth_out = 10 # >0 自动分配公网 IP（allocate_public_ip 已废弃，勿用）
 
   system_disk_category = "cloud_efficiency"
   system_disk_size     = 40
