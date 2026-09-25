@@ -1,7 +1,12 @@
 # cloud-competition-prep
 
-> 世界技能大赛「云计算」项目备赛仓库 · 福建省第二届职业技能大赛（个人赛 · 实操平台：阿里云）
-> 从零到省赛的完整训练存档：Terraform IaC 模板、安全加固脚本、故障复现与排查、架构说明。
+> 世界技能大赛「云计算」项目备赛仓库 · 福建省第二届职业技能大赛（个人赛 · 10 小时 / 100 分）
+> 从零到省赛的完整训练存档：Terraform IaC 模板、Kubernetes / CEPH / OpenStack 实操、故障复现与排查、架构说明。
+
+> **2026-09-24 方向校正**：拿到赛项官方技术工作文件后确认，考核平台为
+> **私有云栈（openEuler + OpenStack + Kubernetes + CEPH）**，而非此前假设的阿里云公有云。
+> 阿里云相关内容（terraform/week01）保留为存档，训练重心已转向私有云。
+> 分值权重：**K8S 32 > CEPH 18 > OpenStack 16 > 中间件 / Linux 34**。
 
 ## 这是什么
 
@@ -19,10 +24,11 @@
 
 ```
 .
-├── terraform/          # IaC 模板，按周归档（week01 / week02 ...）
-│   └── week01/         # W1：VPC + 交换机 + 安全组 + ECS + 数据盘 + 双站点服务
+├── terraform/          # IaC 模板（阿里云阶段，已归档为历史）
+│   └── week01/         # VPC + 交换机 + 安全组 + ECS + 数据盘 + 双站点服务
+├── k8s/                # 私有云阶段：Kubernetes 集群搭建与编排（持续补充）
 ├── scripts/            # 加固脚本、故障复现脚本、巡检脚本
-├── docs/               # 实验记录模板、架构说明
+├── docs/               # 实验记录（现象 → 思路 → 步骤 → 经验）
 └── README.md
 ```
 
@@ -84,14 +90,32 @@ git push
 
 ## 进度看板
 
+### 阿里云阶段（已归档）
+
 | 周 | 主题 | 状态 |
 |---|---|---|
-| W1 | Terraform 上手 + 七件套地基（本周重复练熟） | ✅ 已归档 |
-| W2 | 公私子网 / NAT 网关 / 网络 ACL / 快照镜像 | ⬜ 待开始 |
-| W3 | RDS / SLB / Redis / OSS + 业务部署 | ⬜ 待开始 |
-| W4 | Jam 专项：加固清单 + 10 张故障卡 | ⬜ 待开始 |
-| W5 | 全真模拟 ×2 | ⬜ 待开始 |
-| W6 | 赛前调整：默写 + 命令卡 | ⬜ 待开始 |
+| W1 | Terraform 上手 + 七件套地基，练熟曲线 40min → 2.1min | ✅ 已归档 |
+| W2 ~ W6 | 公私子网 / NAT / RDS / SLB / Jam 专项 | ⏸ 暂停（赛项平台为私有云，非阿里云） |
+
+### 私有云阶段（当前主线，距比赛约 5 周）
+
+| 周 | 主题 | 状态 |
+|---|---|---|
+| W1 | **Kubernetes 集群**：4 节点环境 + kubeadm init + flannel + worker join | 🟡 进行中（双节点 Ready，HA 待补） |
+| W2 | K8S 编排：Deployment / Service / Ingress / StatefulSet / PVC | ⬜ 待开始 |
+| W3 | CEPH：cephadm 部署 + RBD / CephFS + OSD / MON 故障恢复 | ⬜ 待开始 |
+| W4 | OpenStack 深化：运维 + 故障排查 | ⬜ 待开始 |
+| W5 | libvirt / NFS / Keepalived / Go / 中间件补齐 + 全真模拟 | ⬜ 待开始 |
+| W6 | 赛前：默写命令卡 + 限时演练 | ⬜ 待开始 |
+
+### 实验记录
+
+| 日期 | 标题 |
+|---|---|
+| 2026-09-22 | [Windows 国内环境从零装 Git 并完成 GitHub 首次推送](./docs/2026-09-22-git-install-and-first-push.md) |
+| 2026-09-23 | [W1 第 1 轮：Terraform 全生命周期闭环](./docs/2026-09-23-w1-round1-full-cycle.md) |
+| 2026-09-24 | [W1 练熟曲线表](./docs/w1-rounds.md) |
+| 2026-09-25 | [从零搭建 Kubernetes 集群（openEuler + kubeadm）](./docs/2026-09-25-k8s-cluster-from-scratch.md) |
 
 ## 安全声明
 
