@@ -82,6 +82,49 @@ $join = ssh root@192.168.184.11 "kubeadm token create --print-join-command"
 ssh root@192.168.184.21 $join
 ```
 
+## 六-B、控制平面加入（三 master HA）
+
+> ⚠️ **init 的那一刻就要带 `--control-plane-endpoint`**（指向将来的 VIP，如 192.168.184.100:6443）。
+> 事后补救可以，但若题目要求 VIP 则需重签证书——开头定对才是拿分姿势。
+
+**坑 1：没配 controlPlaneEndpoint 时，`join --control-plane` 直接被拒：**
+
+```
+unable to add a new control plane instance to a cluster
+that doesn't have a stable controlPlaneEndpoint
+```
+
+补救（在 master1 上把 endpoint 补进 kubeadm-config）：
+
+```bash
+kubectl -n kube-system get cm kubeadm-config -o jsonpath='{.data.ClusterConfiguration}' > /root/cc.yaml
+sed -i '1i controlPlaneEndpoint: 192.168.184.11:6443' /root/cc.yaml
+kubeadm init phase upload-config kubeadm --config /root/cc.yaml
+kubectl -n kube-system get cm kubeadm-config -o yaml | grep controlPlaneEndpoint
+```
+
+**坑 2：跨层取证书密钥，别用 awk**（PowerShell→bash→awk 三层引号会绞碎它，`$KEY` 变空）。
+用无引号的 grep 模式 + 空值校验：
+
+```bash
+KEY=$(kubeadm init phase upload-certs --upload-certs 2>/dev/null | grep -Eo "[0-9a-f]{64}" | head -1)
+[ -z "$KEY" ] && echo KEY_EMPTY && exit 1
+kubeadm token create --print-join-command | \
+  sed "s#$# --control-plane --certificate-key $KEY#" > /root/join-cp.sh
+```
+
+然后逐台（**不要同时**，etcd 加成员要串行）：
+
+```powershell
+$cp = ssh root@192.168.184.11 "cat /root/join-cp.sh"
+ssh root@192.168.184.12 $cp
+ssh root@192.168.184.13 $cp
+```
+
+验收：`kubectl get nodes` 4 行 Ready（3 control-plane + 1 worker）；
+`kubectl get pod -n kube-system | grep etcd` **3 个** etcd 全 Running。
+新 control-plane 刚加入时 NotReady 1~2 分钟属正常（flannel 自动铺过去）。
+
 ## 七、克隆机出厂五连（每台克隆后必做）
 
 ```bash

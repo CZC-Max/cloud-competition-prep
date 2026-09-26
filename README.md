@@ -116,6 +116,7 @@ git push
 | 2026-09-23 | [W1 第 1 轮：Terraform 全生命周期闭环](./docs/2026-09-23-w1-round1-full-cycle.md) |
 | 2026-09-24 | [W1 练熟曲线表](./docs/w1-rounds.md) |
 | 2026-09-25 | [从零搭建 Kubernetes 集群（openEuler + kubeadm）](./docs/2026-09-25-k8s-cluster-from-scratch.md) |
+| 2026-09-26 | [**踩坑总复盘 09-22 ~ 09-26**（26 个坑 + 3 条排错原则）](./docs/2026-09-26-pitfall-review-0922-0926.md) |
 
 ## 安全声明
 
