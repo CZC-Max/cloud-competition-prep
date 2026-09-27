@@ -118,6 +118,14 @@ git push
 | 2026-09-25 | [从零搭建 Kubernetes 集群（openEuler + kubeadm）](./docs/2026-09-25-k8s-cluster-from-scratch.md) |
 | 2026-09-26 | [**踩坑总复盘 09-22 ~ 09-26**（26 个坑 + 3 条排错原则）](./docs/2026-09-26-pitfall-review-0922-0926.md) |
 
+### 每日总结 & 练熟曲线
+
+| 文件 | 说明 |
+|---|---|
+| [每日收尾流程 SOP](./docs/daily/README.md) | 沉淀 → 总结 → 存档 → 发布 四步闭环（每天固定执行） |
+| [2026-09-27 每日总结](./docs/daily/2026-09-27.md) | K8S 集群首次推倒重来成功，约 19 分钟 |
+| [k8s-rounds.md](./docs/k8s-rounds.md) | K8S 重建练熟曲线（第 1 轮 19min，目标 40min 内稳定） |
+
 ## 安全声明
 
 - 本仓库**不含任何真实 AK/SK、密码、私钥**；`.tfvars` 与 `.tfstate` 已被 `.gitignore` 排除
