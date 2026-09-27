@@ -144,3 +144,39 @@ kubeadm reset -f
 rm -rf /etc/kubernetes /var/lib/etcd ~/.kube
 systemctl restart containerd kubelet
 ```
+
+## 九、重建前预检清单（2026-09-27 实测教训，4 台全跑一遍再 init）
+
+> 关机重启后内核参数会回退、join 参数容易漏——**预检 2 分钟，省掉 10 分钟排错**。
+
+```bash
+# ① 内核参数（4 台全验，必须有 =1）
+sysctl net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables
+# 缺就补 + 持久化：
+sysctl -w net.ipv4.ip_forward=1
+grep -q ip_forward /etc/sysctl.d/k8s.conf 2>/dev/null || echo net.ipv4.ip_forward = 1 >> /etc/sysctl.d/k8s.conf
+modprobe br_netfilter overlay
+echo overlay > /etc/modules-load.d/k8s.conf; echo br_netfilter >> /etc/modules-load.d/k8s.conf
+```
+
+```powershell
+# ② 一条命令批量预检 4 台（宿主机 PowerShell）
+foreach ($ip in 11,12,13,21) { ssh root@192.168.184.$ip "sysctl net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables 2>/dev/null | grep -c '= 1'" }
+# 每台输出 2 = 通过；小于 2 的机器先跑 ① 的补丁
+```
+
+**③ join 文件生成后的肉眼检查（缺一个都过不了 preflight）：**
+
+| 必带参数 | 用在哪 |
+|---|---|
+| `--ignore-preflight-errors=Mem` | worker 和 control-plane 的 join 都要（2G 内存机器必带） |
+| `--control-plane --certificate-key <64位>` | 仅 master 加入；key 必须非空 |
+| `--discovery-token-ca-cert-hash sha256:<64位>` | 全部 join；手抄必丢位，必须管道生成 |
+
+**④ 计时用文件不用变量**（换窗口不丢）：
+
+```powershell
+Get-Date | Out-File D:\K8S\timer.txt    # 开始
+# ...收尾时：
+$sw = (Get-Date) - (Get-Content D:\K8S\timer.txt | Get-Date); "耗时: " + [math]::Round($sw.TotalMinutes,1) + " 分钟"
+```
