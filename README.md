@@ -124,7 +124,8 @@ git push
 |---|---|
 | [每日收尾流程 SOP](./docs/daily/README.md) | 沉淀 → 总结 → 存档 → 发布 四步闭环（每天固定执行） |
 | [2026-09-27 每日总结](./docs/daily/2026-09-27.md) | K8S 集群首次推倒重来成功，约 19 分钟 |
-| [k8s-rounds.md](./docs/k8s-rounds.md) | K8S 重建练熟曲线（第 1 轮 19min，目标 40min 内稳定） |
+| [2026-09-28 每日总结](./docs/daily/2026-09-28.md) | **K8S 重建第 2 轮：9.8 分钟零排错**（预检先行完胜） |
+| [k8s-rounds.md](./docs/k8s-rounds.md) | K8S 重建练熟曲线（19min → **9.8min**，目标 40min 内稳定） |
 
 ## 安全声明
 
