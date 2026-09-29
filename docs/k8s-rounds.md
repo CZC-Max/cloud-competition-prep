@@ -8,7 +8,10 @@
 |---|---|---|---|
 | 1 | 2026-09-27 | **~19 分钟**（含 4 次排错绕路，秒表丢失后按截图时间戳折算） | 首轮重建。绕路原因见下 |
 | 2 | 2026-09-28 | **9.8 分钟**（预检全过，零排错，LastWriteTime 计时） | 🎉 首个干净成绩。目标 40 分钟，已用 1/4 |
-| 3 | 待跑 | — | VM 控制台手敲（考场同条件） |
+| 3 | 2026-09-29 | **28 分钟**（手机计时，含 init 手敲 4 次尝试 + 错字修复 + CNI 工具箱排障） | ⚠️ **难度不同，不与前两轮横比**：全程 VM 控制台手敲、零粘贴 |
+
+> 第 3 轮的"实际干净耗时"参考值 ≈ 15 分钟（28 分钟减去 4 次 init 重写、1 次 sed 修错字、约 10 分钟 CNI 排障）。
+> 真正的对标目标是：**手敲条件下稳定 ≤20 分钟**，第 4 轮开始计时。
 
 ## 第 1 轮踩的绕路（全部已固化为预检清单）
 
@@ -16,6 +19,20 @@
 2. **只修了 master1 没修另外三台** → worker join 同样被拦
 3. **join 文件生成时漏带 `--ignore-preflight-errors=Mem`** → master2/3 被 RAM 检查拦
 4. **中途换 PowerShell 窗口排错** → `$sw` 秒表变量丢失
+
+## 第 3 轮（手敲版）踩的坑
+
+1. **`=` 两边加空格** → `--pod-network-cidr = 10.244.0.0/16` 被当成两条参数，报 `unknown command`
+   - 规则：`--flag=value` 必须**紧贴**，无空格
+2. **`--upload-certs` 手敲不顺** → 果断从 init 里删掉（**非必需**，第 5 步单独 `upload-certs` 等价）
+3. **`errors` 打成 `erroes`** → `unknown flag`；用 `sed -i 's/erroes/errors/g'` 修
+   - 又一次印证"生成的命令必须看尾巴"
+4. **flannel 用了 gitee master 分支 yml** → 新版 install-cni 只拷贝 flannel 二进制，
+   `/opt/cni/bin` 缺 `bridge`/`portmap`/`host-local` → kubelet 报 `cni plugin not initialized`
+   - 修法：`dnf install -y kubernetes-cni`（4 台全装）+ 重启 kubelet
+   - **教训：物料要锁版本，master 分支 ≠ 稳定版**
+5. **VM 控制台吞符号**（`--` 变 `-`、`|` 变 `!`）→ 长命令和管道用宿主机 ssh 兜底；
+   手敲时**敲完先肉眼扫一遍回显再回车**
 
 ## 经验
 
