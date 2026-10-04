@@ -180,3 +180,79 @@ Get-Date | Out-File D:\K8S\timer.txt    # 开始
 # ...收尾时：
 $sw = (Get-Date) - (Get-Content D:\K8S\timer.txt | Get-Date); "耗时: " + [math]::Round($sw.TotalMinutes,1) + " 分钟"
 ```
+
+---
+
+## 十、A4 编排（6 分，2026-10-02 ~ 10-04 完成 4/4）
+
+### 第一课 · Deployment + Service（口诀：建 → 换 → 扩 → 露）
+
+```bash
+kubectl create deployment web --image=nginx:1.25
+kubectl set image deployment/web nginx=docker.m.daocloud.io/library/nginx:1.25   # ErrImagePull 时换源
+kubectl scale deployment web --replicas=3
+kubectl expose deployment web --type=NodePort --port=80
+kubectl get pod,svc
+```
+
+> NodePort 在**每台节点**都开同一端口，容器不在那台也能转发过去；
+> `PORT(S) 80:31636` 读法：容器 80 ← 节点 31636。
+
+### 第二课 · Ingress（口诀：装 → 建 → 看 → 验）
+
+```bash
+kubectl apply -f /root/ingress-deploy-cn.yaml                     # 控制器（离线文件，不走外网）
+kubectl create ingress web --rule=web.test/=web:80 --class=nginx  # ⚠️ --class 必带
+kubectl get svc -n ingress-nginx                                  # 拿对外端口
+curl -s -H 'Host: web.test' http://<节点IP>:3xxxx                  # 用 Host 头验域名路由
+```
+
+> **三要素缺一即 404**：规则（host/path）+ 后端（service）+ `ingressClassName`。
+> 排查顺序：**先 class → 再 path → 最后 service**。
+
+**daocloud 镜像站域名映射表**（血战 1 小时成果）：
+
+| 上游 registry | daocloud 域名 |
+|---|---|
+| docker.io | `docker.m.daocloud.io` |
+| registry.k8s.io | `k8s.m.daocloud.io` ← 最容易拼错 |
+| gcr.io / ghcr.io / quay.io | `gcr.m.` / `ghcr.m.` / `quay.m.daocloud.io` |
+
+> ❌ 错：`docker.m.daocloud.io/registry.k8s.io/...`（403）
+> ✅ 对：`k8s.m.daocloud.io/ingress-nginx/controller:v1.11.3`（域名本身就是源，不带上游路径）
+
+### 第三课 · PVC 持久化（口诀：盘 → 单 → 挂 → 验）
+
+```bash
+kubectl apply -f pv.yaml && kubectl apply -f pvc.yaml && kubectl apply -f pod-pvc.yaml
+kubectl get pv,pvc                       # 必须为 Bound
+kubectl exec web-pvc -- cat /usr/share/nginx/html/index.html   # 重建后复读 → 数据还在
+```
+
+**最小 YAML 骨架**（PV 侧）：
+
+```yaml
+spec:
+  capacity: {storage: 1Gi}
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual          # ⚠️ 与 PVC 必须同名，否则 Pending
+  hostPath: {path: /data/web, type: DirectoryOrCreate}
+```
+
+| 卷类型 | 生命周期 | 用途 |
+|---|---|---|
+| `emptyDir` | 跟 Pod，删就没 | 临时缓存 |
+| `hostPath` | 跟节点磁盘 | 单机测试 |
+| `PVC` | 独立于 Pod | 生产 / 考试（**"数据不丢"必须 PVC**） |
+
+> PVC 绑定匹配三样：`storageClassName` + `accessModes` + 容量 ≥ 请求。
+> 数据在**节点磁盘**（worker1 `/data/web`），容器只是挂过来看 —— 换 CEPH 只改 PV 那段，PVC/Pod 不动。
+
+### 编排题验收自查
+
+| 检查项 | 命令 | 合格标准 |
+|---|---|---|
+| Pod 起没起 | `kubectl get pod` | Running 1/1 |
+| 服务通不通 | `curl <节点IP>:<NodePort>` | 返回页面内容 |
+| 域名路由灵不灵 | `curl -H 'Host: web.test' <节点IP>:3xxxx` | 返回正确后端 |
+| 数据丢不丢 | 删 Pod 重建后 `cat` 挂载文件 | **内容不变** |

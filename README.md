@@ -102,7 +102,7 @@ git push
 | 周 | 主题 | 状态 |
 |---|---|---|
 | W1 | **Kubernetes 集群**：4 节点环境 + kubeadm init + flannel + worker join | 🟡 进行中（双节点 Ready，HA 待补） |
-| W2 | K8S 编排：Deployment / Service / Ingress / StatefulSet / PVC | ⬜ 待开始 |
+| W2 | K8S 编排：Deployment / Service / Ingress / PVC | 🟡 4/4 已完成（2026-10-04），待计时演练 |
 | W3 | CEPH：cephadm 部署 + RBD / CephFS + OSD / MON 故障恢复 | ⬜ 待开始 |
 | W4 | OpenStack 深化：运维 + 故障排查 | ⬜ 待开始 |
 | W5 | libvirt / NFS / Keepalived / Go / 中间件补齐 + 全真模拟 | ⬜ 待开始 |
@@ -129,6 +129,7 @@ git push
 | [2026-09-30 每日总结](./docs/daily/2026-09-30.md) | **第 4 轮手敲：39 分 19 秒**，定位"集群残留状态"并总结**重启洗牌法** |
 | [2026-10-02 每日总结](./docs/daily/2026-10-02.md) | **A4 编排第一课**：Deployment + NodePort Service + 声明式自愈实验 |
 | [2026-10-03 每日总结](./docs/daily/2026-10-03.md) | **A4 第二课：Ingress 打通**，破解 daocloud 镜像站域名映射表 |
+| [2026-10-04 每日总结](./docs/daily/2026-10-04.md) | **A4 第三课：PVC 持久化零踩坑**，删 Pod 重建数据仍在 —— **编排 4/4 收官** |
 | [k8s-rounds.md](./docs/k8s-rounds.md) | K8S 重建练熟曲线（19 → 9.8 → 28 → 39min），含 NotReady 七步排查链 |
 
 ## 安全声明
