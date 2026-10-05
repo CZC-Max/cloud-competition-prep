@@ -256,3 +256,59 @@ spec:
 | 服务通不通 | `curl <节点IP>:<NodePort>` | 返回页面内容 |
 | 域名路由灵不灵 | `curl -H 'Host: web.test' <节点IP>:3xxxx` | 返回正确后端 |
 | 数据丢不丢 | 删 Pod 重建后 `cat` 挂载文件 | **内容不变** |
+
+---
+
+## 十一、B6 故障排除（排错七步链 + 速反表）
+
+> B6 = K8S 里最大的单项。排错的本质：**从外往内扫，用"通/不通的组合"圈定病灶**。
+
+### 排错七步链（背下顺序，从上往下扫）
+
+```bash
+kubectl get nodes              # ① 集群层：谁 NotReady？
+kubectl get pod -A             # ② 系统组件层：kube-system 里有没有红的？
+kubectl get pod                # ③ 应用层：哪个 Pod 异常？
+kubectl describe pod <名>      # ④ 看 Events 底部，90% 的答案在这
+kubectl logs <名>              # ⑤ 容器自己的输出（CrashLoop 用）
+kubectl get svc,ep             # ⑥ 服务层：endpoints 有没有后端？
+systemctl status kubelet containerd   # ⑦ 节点层 + journalctl -u kubelet
+```
+
+### 现象 → 第一反应
+
+| 看到什么 | 病在哪 | 第一反应 |
+|---|---|---|
+| `ErrImagePull` / `ImagePullBackOff` | 镜像名错/拉不到 | describe 看镜像名 → `set image` 修 |
+| `Pending` | 调度不出去 | describe 看 Events（资源/污点/PVC） |
+| `CrashLoopBackOff` | 程序自己崩 | logs 看报错 |
+| Service 通不了 | 后端空 | `get ep` 为 `<none>` → selector/副本数 |
+| 节点 `NotReady` | 节点组件挂 | 节点上 `systemctl status kubelet` |
+| `localhost:8080 refused` | **这台机器没有 kubeconfig** | 去 master1 操作，或拷 admin.conf |
+| Pod 好的、ClusterIP 通、NodePort 拒连 | 对应节点的 kube-proxy 规则没写 | 删该节点 kube-proxy Pod 强制重同步 |
+
+### 分层探测法（NodePort 不通时的标准动作）
+
+```bash
+curl -s -m 3 http://<PodIP>        ; echo rc=$?   # ① CNI/flannel 层
+curl -s -m 3 http://<ClusterIP>    ; echo rc=$?   # ② kube-proxy Service 层
+curl -s -m 3 http://<节点IP>:<NodePort> ; echo rc=$?   # ③ 节点 iptables 层
+```
+
+| ① | ② | ③ | 病灶 |
+|---|---|---|---|
+| ❌ | ❌ | ❌ | CNI / flannel |
+| ✅ | ❌ | ❌ | kube-proxy 整体 |
+| ✅ | ✅ | ❌ | 目标节点的 kube-proxy / iptables |
+
+> 🔑 NodePort 的 DNAT 规则只装在**接收该端口的节点**上——curl 别的节点：节点IP，只需要那台节点有规则。
+
+### 三条铁律
+
+1. **修复生效 ≠ 立即可用**：Pod Running → endpoints 有值 → curl 通，三级证据链走完才算修复（抢跑会把真病灶盖住）。
+2. **故障证据会随修复消失**：边看边记，别修完了才去找报错。
+3. **对照组是排错的斧头**：同一组件，一台好一台坏，diff 一下病灶自己浮出来。
+
+### 真实案例存档（2026-10-05）
+
+master1 资源耗尽假死 → 恢复后全部节点 kube-proxy 不再写 iptables 规则（日志零报错"装睡"、Pod 反复重生、rollout restart 与整机重启均无效）→ **四台统一回滚快照恢复**。启示：`日志干净 + 行为异常 + 重启无效 = 状态损坏`，止损回滚比继续纠缠性价比高。
